@@ -12,10 +12,12 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 class Cannon:
     max_velocity = 10
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, width, height, ):
         self.x = x
         self.y = y
-        self.shell_num = None  # TODO: оставшееся на данный момент количество снарядов
+        self.width = width
+        self.height = height
+        self.shell_num = 10
         self.direction = math.pi / 4
 
     def aim(self, x, y):
@@ -28,19 +30,24 @@ class Cannon:
         """
         pass  # TODO
 
-    def fire(self, dt):
+    def fire(self, dt, shells):
         """
         Создаёт объект снаряда (если ещё не потрачены все снаряды)
         летящий в направлении угла direction
         со скоростью, зависящей от длительности клика мышки
+        :param shells: список снарядов
         :param dt:  длительность клика мышки, мс
         :return: экземпляр снаряда типа Shell
         """
-        pass
+        x = self.x + self.width // 2
+        y = self.y + self.height // 2
+        v_x = 10
+        v_y = 10
+        shell = Shell(x, y, v_x, v_y)
+        shells.append(shell)
 
     def draw(self):
-        pygame.draw.circle(screen, self.color,
-                           (int(round(self.x)), int(round(self.y))), self.r)
+        pygame.draw.rect(screen, BLACK, (self.x, self.y, self.width, self.height))
 
 
 class Shell:
@@ -50,6 +57,7 @@ class Shell:
         self.x, self.y = x, y
         self.Vx, self.Vy = Vx, Vy
         self.r = Shell.standard_radius
+        self.color = COLORS[rnd.randint(0, len(COLORS) - 1)]
 
     def move(self, dt):
         """
@@ -117,10 +125,6 @@ class Target:
         pass  #TODO
 
 
-class Bomb:
-    pass
-
-
 def generate_random_targets(number: int):
     targets = []
     for i in range(number):
@@ -134,20 +138,19 @@ def generate_random_targets(number: int):
 
 
 def game_main_loop():
-
     targets = generate_random_targets(10)
-
+    shells = []
     clock = pygame.time.Clock()
     finished = False
+    cannon = Cannon(0, SCREEN_HEIGHT * 0.9, SCREEN_WIDTH // 10, SCREEN_HEIGHT // 30)
 
     while not finished:
         dt = clock.tick(FPS) / 1000
-        print(dt)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 finished = True
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                print('Click!')
+                cannon.fire(dt, shells)
 
         pygame.display.update()
         screen.fill(GRAY)
@@ -157,6 +160,11 @@ def game_main_loop():
 
         for target in targets:
             target.draw()
+        for shell in shells:
+            shell.move(dt)
+            shell.draw()
+        cannon.draw()
+        pygame.display.update()
 
     pygame.quit()
 
