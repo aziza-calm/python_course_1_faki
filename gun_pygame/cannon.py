@@ -30,19 +30,20 @@ class Cannon:
         """
         pass  # TODO
 
-    def fire(self, dt, shells):
+    def fire(self, dt, shells, pos):
         """
         Создаёт объект снаряда (если ещё не потрачены все снаряды)
         летящий в направлении угла direction
         со скоростью, зависящей от длительности клика мышки
+        :param pos: координаты мышки
         :param shells: список снарядов
         :param dt:  длительность клика мышки, мс
         :return: экземпляр снаряда типа Shell
         """
         x = self.x + self.width // 2
         y = self.y + self.height // 2
-        v_x = 10
-        v_y = 10
+        v_x = pos[0] - self.x
+        v_y = pos[1] - self.y
         shell = Shell(x, y, v_x, v_y)
         shells.append(shell)
 
@@ -58,6 +59,7 @@ class Shell:
         self.Vx, self.Vy = Vx, Vy
         self.r = Shell.standard_radius
         self.color = COLORS[rnd.randint(0, len(COLORS) - 1)]
+        self.is_alive = True
 
     def move(self, dt):
         """
@@ -72,7 +74,23 @@ class Shell:
         self.y += self.Vy*dt + ay*(dt**2)/2
         self.Vx += ax*dt
         self.Vy += ay*dt
-        # TODO: Уничтожать (в статус deleted) снаряд, когда он касается земли.
+        if self.y + self.r >= SCREEN_HEIGHT:
+            self.is_alive = False
+        self.wall_direction_change()
+
+    def wall_direction_change(self):
+        """
+        Меняет направление снаряда во время столкновений со стенками
+        :return:
+        """
+        if self.x + self.r >= SCREEN_WIDTH:
+            self.Vx = self.Vx * (-1)
+        if self.x - self.r <= 0:
+            self.Vx = self.Vx * (-1)
+        if self.y - self.r <= 0:
+            self.Vy = self.Vy * (-1)
+        if self.y + self.r >= SCREEN_HEIGHT:
+            self.Vy = self.Vy * (-1)
 
     def draw(self):
         pygame.draw.circle(screen, self.color,
@@ -150,19 +168,19 @@ def game_main_loop():
             if event.type == pygame.QUIT:
                 finished = True
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                cannon.fire(dt, shells)
+                cannon.fire(dt, shells, event.pos)
 
         pygame.display.update()
         screen.fill(GRAY)
 
         for target in targets:
             target.move(dt)
-
         for target in targets:
             target.draw()
         for shell in shells:
             shell.move(dt)
-            shell.draw()
+            if shell.is_alive:
+                shell.draw()
         cannon.draw()
         pygame.display.update()
 
